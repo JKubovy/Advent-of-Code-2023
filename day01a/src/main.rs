@@ -12,7 +12,7 @@ fn calculate_calibration_value(input: &str) -> u32 {
 }
 
 fn main() {
-    let input = include_str!("../input.txt");
+    let input = include_str!("../../inputs/day01.input");
     let result = calculate_calibration_value(input);
     println!("{}", result);
 }
@@ -23,7 +23,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let data = include_str!("../test.txt");
+        let data = include_str!("../../inputs/day01a.test");
         let result = calculate_calibration_value(data);
         assert_eq!(result, 142);
     }
