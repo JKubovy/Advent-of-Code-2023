@@ -40,7 +40,7 @@ fn second_part(input: &str) -> u32 {
 }
 
 fn main() {
-    let input = include_str!("../../inputs/day01.input");
+    let input = include_str!("../inputs/input.txt");
     let first_part = first_part(input);
     println!("First part: {}", first_part);
     let second_part = second_part(input);
@@ -53,28 +53,28 @@ mod tests {
 
     #[test]
     fn test_first_part() {
-        let data = include_str!("../../inputs/day01a.test");
+        let data = include_str!("../inputs/test_first.txt");
         let result = first_part(data);
         assert_eq!(result, 142);
     }
 
     #[test]
     fn input_first_part() {
-        let data = include_str!("../../inputs/day01.input");
+        let data = include_str!("../inputs/input.txt");
         let result = first_part(data);
         assert_eq!(result, 54968);
     }
 
     #[test]
     fn test_second_part() {
-        let data = include_str!("../../inputs/day01b.test");
+        let data = include_str!("../inputs/test_second.txt");
         let result = second_part(data);
         assert_eq!(result, 281);
     }
 
     #[test]
     fn input_second_part() {
-        let data = include_str!("../../inputs/day01.input");
+        let data = include_str!("../inputs/input.txt");
         let result = second_part(data);
         assert_eq!(result, 54094);
     }

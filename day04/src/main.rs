@@ -5,7 +5,7 @@ struct Card {
 }
 
 struct Win {
-    index: usize,
+    _index: usize,
     wins: usize,
 }
 
@@ -62,7 +62,7 @@ fn second_part(cards: &[Card]) -> u32 {
                 acc
             });
             Win {
-                index: card.index,
+                _index: card.index,
                 wins,
             }
         })
@@ -77,7 +77,7 @@ fn second_part(cards: &[Card]) -> u32 {
 }
 
 fn main() {
-    let input = include_str!("../../inputs/day04.input");
+    let input = include_str!("../inputs/input.txt");
     let cards = parse_cards(input);
     let first_part = first_part(&cards);
     println!("First part: {}", first_part);
@@ -91,7 +91,7 @@ mod tests {
 
     #[test]
     fn test_first_part() {
-        let data = include_str!("../../inputs/day04.test");
+        let data = include_str!("../inputs/test.txt");
         let cards = parse_cards(data);
         let result = first_part(&cards);
         assert_eq!(result, 13);
@@ -99,7 +99,7 @@ mod tests {
 
     #[test]
     fn input_first_part() {
-        let data = include_str!("../../inputs/day04.input");
+        let data = include_str!("../inputs/input.txt");
         let cards = parse_cards(data);
         let result = first_part(&cards);
         assert_eq!(result, 20829);
@@ -107,7 +107,7 @@ mod tests {
 
     #[test]
     fn test_second_part() {
-        let data = include_str!("../../inputs/day04.test");
+        let data = include_str!("../inputs/test.txt");
         let cards = parse_cards(data);
         let result = second_part(&cards);
         assert_eq!(result, 30);
@@ -115,7 +115,7 @@ mod tests {
 
     #[test]
     fn input_second_part() {
-        let data = include_str!("../../inputs/day04.input");
+        let data = include_str!("../inputs/input.txt");
         let cards = parse_cards(data);
         let result = second_part(&cards);
         assert_eq!(result, 12648035);
