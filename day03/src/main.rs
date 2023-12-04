@@ -13,7 +13,15 @@ struct NumberLocation {
     end_inclusive: usize,
 }
 
-fn calculate_calibration_value(input: &str) -> u32 {
+fn first_part(input: &str) -> u32 {
+    let board = parse_board(input);
+    let board = expand_borad_with_edge(board);
+    let numbers = get_numbers_with_coordinates(&board);
+    let numbers = filter_numbers_without_adjacent_symbols(numbers, &board);
+    numbers.iter().map(|nl| nl.number).sum()
+}
+
+fn second_part(input: &str) -> u32 {
     let board = parse_board(input);
     let board = expand_borad_with_edge(board);
     let numbers = get_numbers_with_coordinates(&board);
@@ -68,6 +76,36 @@ fn find_number_index(line: usize, x: usize, numbers: &[NumberLocation]) -> usize
         .iter()
         .position(|n| n.line == line && n.start <= x && n.end_inclusive >= x)
         .expect("Every digits need to belogs to number")
+}
+
+fn filter_numbers_without_adjacent_symbols(
+    numbers: Vec<NumberLocation>,
+    board: &[Vec<Cell>],
+) -> Vec<NumberLocation> {
+    numbers
+        .into_iter()
+        .filter(|number| {
+            if board[number.line - 1][number.start - 1..number.end_inclusive + 2]
+                .iter()
+                .any(|c| matches!(c, Cell::Symbol(_)))
+            {
+                return true;
+            }
+            if let Cell::Symbol(_) = board[number.line][number.start - 1] {
+                return true;
+            }
+            if let Cell::Symbol(_) = board[number.line][number.end_inclusive + 1] {
+                return true;
+            }
+            if board[number.line + 1][number.start - 1..number.end_inclusive + 2]
+                .iter()
+                .any(|c| matches!(c, Cell::Symbol(_)))
+            {
+                return true;
+            }
+            false
+        })
+        .collect()
 }
 
 fn get_numbers_with_coordinates(board: &[Vec<Cell>]) -> Vec<NumberLocation> {
@@ -126,8 +164,10 @@ fn parse_board(input: &str) -> Vec<Vec<Cell>> {
 
 fn main() {
     let input = include_str!("../../inputs/day03.input");
-    let result = calculate_calibration_value(input);
-    println!("{}", result);
+    let first_part = first_part(input);
+    println!("First part: {}", first_part);
+    let second_part = second_part(input);
+    println!("Second part: {}", second_part);
 }
 
 #[cfg(test)]
@@ -135,16 +175,38 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test() {
+    fn test_first_part() {
         let data = include_str!("../../inputs/day03.test");
-        let result = calculate_calibration_value(data);
+        let result = first_part(data);
+        assert_eq!(result, 4361);
+    }
+
+    #[test]
+    fn test_first_part_custom_1() {
+        let data = include_str!("../../inputs/day03_1.test");
+        let result = first_part(data);
+        assert_eq!(result, 6);
+    }
+
+    #[test]
+    fn input_first_part() {
+        let data = include_str!("../../inputs/day03.input");
+        let result = first_part(data);
+        assert_ne!(result, 525642);
+        assert_eq!(result, 527144);
+    }
+
+    #[test]
+    fn test_second_part() {
+        let data = include_str!("../../inputs/day03.test");
+        let result = second_part(data);
         assert_eq!(result, 467835);
     }
 
     #[test]
-    fn test_input() {
+    fn input_second_part() {
         let data = include_str!("../../inputs/day03.input");
-        let result = calculate_calibration_value(data);
+        let result = second_part(data);
         assert_eq!(result, 81463996);
     }
 }
