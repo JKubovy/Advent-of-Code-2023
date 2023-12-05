@@ -1,7 +1,4 @@
-use rayon::prelude::*;
-use std::{collections::HashMap, sync::Mutex};
-
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 enum PlantStep {
     Seed,
     Soil,
@@ -34,6 +31,7 @@ struct Interval {
     from: u64,
     to_exclusive: u64,
     shift: i64,
+    len: u64,
 }
 
 #[derive(Debug)]
@@ -43,7 +41,6 @@ struct Mapping {
     intervals: Vec<Interval>,
 }
 
-#[derive(Debug)]
 struct Plan {
     seeds: Vec<u64>,
     mappings: Vec<Mapping>,
@@ -101,6 +98,7 @@ fn parse_plan(input: &str) -> Plan {
                                 + int.parse::<u64>().unwrap(),
                             shift: (map_to.parse::<i64>().unwrap()
                                 - map_from.parse::<i64>().unwrap()),
+                            len: int.parse::<u64>().unwrap(),
                         },
                         _ => unimplemented!(),
                     },
@@ -135,31 +133,62 @@ fn first_part(input: &Plan) -> u64 {
 }
 
 fn second_part(input: &Plan) -> u64 {
-    let min = Mutex::new(u64::MAX);
-    let mut maps = HashMap::new();
-    for map in &input.mappings {
-        maps.insert(map.form.clone(), map);
+    let mut step = &PlantStep::Seed;
+    let mut ordered_mappings = Vec::new();
+    while step != &PlantStep::Location {
+        let map = input
+            .mappings
+            .iter()
+            .find(|map| map.form == *step)
+            .expect("Can't find mapping");
+        step = &map.to;
+        ordered_mappings.push(&map.intervals);
     }
-    let maps = maps;
-
-    input.seeds.chunks(2).for_each(|w| {
-        (0..w[1]).into_par_iter().for_each(|i| {
-            let mut step = &PlantStep::Seed;
-            let mut i = w[0] + i;
-            while step != &PlantStep::Location {
-                let mapping = maps.get(step).unwrap();
-                i = mapping.map(i);
-                step = &mapping.to;
-            }
-            let mut guard = min.lock().unwrap();
-            if i < *guard {
-                *guard = i;
-            }
-            drop(guard);
-        });
-    });
-    let i = *min.lock().unwrap();
-    i
+    let seed_intervals = input
+        .seeds
+        .chunks(2)
+        .map(|w| (w[0], w[0] + w[1]))
+        .collect::<Vec<_>>();
+    let mapped_intervals =
+        ordered_mappings
+            .into_iter()
+            .fold(seed_intervals, |intervals, mappings| {
+                intervals
+                    .iter()
+                    .flat_map(|&(start, end)| {
+                        let mut mapped = Vec::new();
+                        let mut unmapped = vec![(start, end)];
+                        for map_interval in mappings {
+                            let mut interval_mapped = Vec::new();
+                            for (start, end) in unmapped {
+                                let left = (start, end.min(map_interval.from));
+                                let center = (
+                                    start.max(map_interval.from),
+                                    (map_interval.from + map_interval.len).min(end),
+                                );
+                                let right =
+                                    ((map_interval.from + map_interval.len).max(start), end);
+                                if left.0 < left.1 {
+                                    interval_mapped.push(left);
+                                }
+                                if center.0 < center.1 {
+                                    mapped.push((
+                                        center.0.checked_add_signed(map_interval.shift).unwrap(),
+                                        center.1.checked_add_signed(map_interval.shift).unwrap(),
+                                    ));
+                                }
+                                if right.0 < right.1 {
+                                    interval_mapped.push(right);
+                                }
+                            }
+                            unmapped = interval_mapped;
+                        }
+                        mapped.extend(unmapped);
+                        mapped
+                    })
+                    .collect()
+            });
+    mapped_intervals.iter().map(|i| i.0).min().unwrap()
 }
 
 fn main() {
