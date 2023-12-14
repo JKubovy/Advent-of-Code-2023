@@ -1,8 +1,8 @@
-fn first_part(input: &str) -> u32 {
+fn first_part(input: &str) -> usize {
     todo!();
 }
 
-fn second_part(input: &str) -> u32 {
+fn second_part(input: &str) -> usize {
     todo!();
 }
 
