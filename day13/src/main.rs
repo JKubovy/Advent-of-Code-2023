@@ -48,7 +48,7 @@ fn number_of_errors_in_row(line: &Vec<&Ground>, index: usize) -> usize {
     errors
 }
 
-fn calculate_mirror_index(input: &Grid<Ground>, allow_erors: usize) -> usize {
+fn calculate_mirror_index(input: &Grid<Ground>, allow_errors: usize) -> usize {
     let (height, width) = input.size();
     for split in 1..width {
         let mut number_of_errors = 0;
@@ -56,7 +56,7 @@ fn calculate_mirror_index(input: &Grid<Ground>, allow_erors: usize) -> usize {
             let row = row.collect::<Vec<_>>();
             number_of_errors += number_of_errors_in_row(&row, split);
         }
-        if number_of_errors == allow_erors {
+        if number_of_errors == allow_errors {
             return split;
         }
     }
@@ -66,7 +66,7 @@ fn calculate_mirror_index(input: &Grid<Ground>, allow_erors: usize) -> usize {
             let column = column.collect::<Vec<_>>();
             number_of_errors += number_of_errors_in_row(&column, split);
         }
-        if number_of_errors == allow_erors {
+        if number_of_errors == allow_errors {
             return 100 * split;
         }
     }
