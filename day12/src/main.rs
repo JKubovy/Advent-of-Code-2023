@@ -40,11 +40,10 @@ fn count_possibilities(mut records: Vec<SpringRecord>, count_errors: &[usize]) -
                 if matches!(
                     records[pos],
                     SpringRecord::Operational | SpringRecord::Unknown
-                ) {
-                    if len == 0 || (error_count > 0 && len == count_errors[error_count - 1]) {
-                        dp_array[pos + 1][error_count][0] =
-                            Some(dp_array[pos + 1][error_count][0].unwrap_or(0) + current.unwrap());
-                    }
+                ) && (len == 0 || (error_count > 0 && len == count_errors[error_count - 1]))
+                {
+                    dp_array[pos + 1][error_count][0] =
+                        Some(dp_array[pos + 1][error_count][0].unwrap_or(0) + current.unwrap());
                 }
                 if matches!(records[pos], SpringRecord::Damaged | SpringRecord::Unknown) {
                     let x = if len == 0 { 1 } else { 0 };
@@ -60,9 +59,9 @@ fn count_possibilities(mut records: Vec<SpringRecord>, count_errors: &[usize]) -
 
 fn expand_line(line: &str) -> String {
     let (records, numbers) = line.split_once(' ').expect("Wrong line format");
-    let records = vec![records; 5].join("?");
-    let numbers = vec![numbers; 5].join(",");
-    vec![records, numbers].join(" ")
+    let records = [records; 5].join("?");
+    let numbers = [numbers; 5].join(",");
+    [records, numbers].join(" ")
 }
 
 fn first_part(input: &str) -> usize {
@@ -76,7 +75,7 @@ fn first_part(input: &str) -> usize {
 fn second_part(input: &str) -> usize {
     input
         .lines()
-        .map(|line| expand_line(line))
+        .map(expand_line)
         .map(|line| parse_line(&line))
         .map(|(records, count_errors)| count_possibilities(records, &count_errors))
         .sum()
