@@ -1,9 +1,9 @@
 fn first_part(input: &str) -> u32 {
-    unimplemented!();
+    todo!();
 }
 
 fn second_part(input: &str) -> u32 {
-    unimplemented!();
+    todo!();
 }
 
 fn main() {
@@ -22,27 +22,27 @@ mod tests {
     fn test_first_part() {
         let data = include_str!("../inputs/test.txt");
         let result = first_part(data);
-        assert_eq!(result, unimplemented!());
+        assert_eq!(result, todo!());
     }
 
     #[test]
     fn input_first_part() {
         let data = include_str!("../inputs/input.txt");
         let result = first_part(data);
-        assert_eq!(result, unimplemented!());
+        assert_eq!(result, todo!());
     }
 
     #[test]
     fn test_second_part() {
         let data = include_str!("../inputs/test.txt");
         let result = second_part(data);
-        assert_eq!(result, unimplemented!());
+        assert_eq!(result, todo!());
     }
 
     #[test]
     fn input_second_part() {
         let data = include_str!("../inputs/input.txt");
         let result = second_part(data);
-        assert_eq!(result, unimplemented!());
+        assert_eq!(result, todo!());
     }
 }
