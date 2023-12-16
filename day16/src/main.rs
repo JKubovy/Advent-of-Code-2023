@@ -1,4 +1,4 @@
-use std::ops::Add;
+use std::{cmp::max, ops::Add};
 
 #[derive(Clone, Copy)]
 enum Tile {
@@ -9,14 +9,16 @@ enum Tile {
     SplitterVertical,
 }
 
+use Tile::*;
+
 impl From<char> for Tile {
     fn from(value: char) -> Self {
         match value {
-            '.' => Tile::Empty,
-            '/' => Tile::MirrorLeft,
-            '\\' => Tile::MirrorRight,
-            '-' => Tile::SplitterHorizontal,
-            '|' => Tile::SplitterVertical,
+            '.' => Empty,
+            '/' => MirrorLeft,
+            '\\' => MirrorRight,
+            '-' => SplitterHorizontal,
+            '|' => SplitterVertical,
             _ => panic!("Unknown tile type"),
         }
     }
@@ -36,24 +38,26 @@ enum Direction {
     Right,
 }
 
+use Direction::*;
+
 impl Add<Direction> for Position {
     type Output = Option<Position>;
 
     fn add(self, rhs: Direction) -> Self::Output {
         let position = match rhs {
-            Direction::Up => Position {
+            Up => Position {
                 y: self.y.checked_sub(1)?,
                 ..self
             },
-            Direction::Left => Position {
+            Left => Position {
                 x: self.x.checked_sub(1)?,
                 ..self
             },
-            Direction::Down => Position {
+            Down => Position {
                 y: self.y.checked_add(1)?,
                 ..self
             },
-            Direction::Right => Position {
+            Right => Position {
                 x: self.x.checked_add(1)?,
                 ..self
             },
@@ -93,62 +97,31 @@ fn get_energized_count(
             if old_direction.is_none() || old_direction.unwrap() != direction {
                 energized[y][x] = Some(direction);
                 match (map[y][x], direction) {
-                    (Tile::Empty, direction) => stack.push((position + direction, direction)),
-                    (Tile::SplitterHorizontal, Direction::Left) => {
-                        stack.push((position + Direction::Left, Direction::Left))
+                    (Empty, direction) => stack.push((position + direction, direction)),
+                    (SplitterHorizontal, Left) => stack.push((position + Left, Left)),
+                    (SplitterHorizontal, Right) => stack.push((position + Right, Right)),
+                    (SplitterVertical, Up) => stack.push((position + Up, direction)),
+                    (SplitterVertical, Down) => stack.push((position + Down, direction)),
+                    (MirrorLeft, Up) => stack.push((position + Right, Right)),
+                    (MirrorLeft, Left) => stack.push((position + Down, Down)),
+                    (MirrorLeft, Down) => stack.push((position + Left, Left)),
+                    (MirrorLeft, Right) => stack.push((position + Up, Up)),
+                    (MirrorRight, Up) => stack.push((position + Left, Left)),
+                    (MirrorRight, Left) => stack.push((position + Up, Up)),
+                    (MirrorRight, Down) => stack.push((position + Right, Right)),
+                    (MirrorRight, Right) => stack.push((position + Down, Down)),
+                    (SplitterHorizontal, _) => {
+                        stack.push((position.clone() + Left, Left));
+                        stack.push((position + Right, Right))
                     }
-                    (Tile::SplitterHorizontal, Direction::Right) => {
-                        stack.push((position + Direction::Right, Direction::Right))
-                    }
-                    (Tile::SplitterVertical, Direction::Up) => {
-                        stack.push((position + Direction::Up, direction))
-                    }
-                    (Tile::SplitterVertical, Direction::Down) => {
-                        stack.push((position + Direction::Down, direction))
-                    }
-                    (Tile::MirrorLeft, Direction::Up) => {
-                        stack.push((position + Direction::Right, Direction::Right))
-                    }
-                    (Tile::MirrorLeft, Direction::Left) => {
-                        stack.push((position + Direction::Down, Direction::Down))
-                    }
-                    (Tile::MirrorLeft, Direction::Down) => {
-                        stack.push((position + Direction::Left, Direction::Left))
-                    }
-                    (Tile::MirrorLeft, Direction::Right) => {
-                        stack.push((position + Direction::Up, Direction::Up))
-                    }
-                    (Tile::MirrorRight, Direction::Up) => {
-                        stack.push((position + Direction::Left, Direction::Left))
-                    }
-                    (Tile::MirrorRight, Direction::Left) => {
-                        stack.push((position + Direction::Up, Direction::Up))
-                    }
-                    (Tile::MirrorRight, Direction::Down) => {
-                        stack.push((position + Direction::Right, Direction::Right))
-                    }
-                    (Tile::MirrorRight, Direction::Right) => {
-                        stack.push((position + Direction::Down, Direction::Down))
-                    }
-                    (Tile::SplitterHorizontal, _) => {
-                        stack.push((position.clone() + Direction::Left, Direction::Left));
-                        stack.push((position + Direction::Right, Direction::Right))
-                    }
-                    (Tile::SplitterVertical, _) => {
-                        stack.push((position.clone() + Direction::Up, Direction::Up));
-                        stack.push((position + Direction::Down, Direction::Down))
+                    (SplitterVertical, _) => {
+                        stack.push((position.clone() + Up, Up));
+                        stack.push((position + Down, Down))
                     }
                 }
             }
         }
     }
-    // for line in &energized {
-    //     for x in line {
-    //         print!("{}", if x.is_some() { '#' } else { '.' })
-    //     }
-    //     println!();
-    // }
-    // println!();
 
     energized
         .iter()
@@ -159,46 +132,28 @@ fn get_energized_count(
 fn first_part(input: &str) -> usize {
     let map = parse_input(input);
     let (height, width) = (map.len(), map.get(0).expect("Empty puzzle").len());
-    get_energized_count(
-        &map,
-        height,
-        width,
-        Position { y: 0, x: 0 },
-        Direction::Right,
-    )
+    get_energized_count(&map, height, width, Position { y: 0, x: 0 }, Right)
 }
 
 fn second_part(input: &str) -> usize {
     let map = parse_input(input);
     let (height, width) = (map.len(), map.get(0).expect("Empty puzzle").len());
-    let mut max = 0;
+    let mut maximum = 0;
     for y in 0..height {
-        let tmp_max =
-            get_energized_count(&map, height, width, Position { y, x: 0 }, Direction::Right);
-        max = std::cmp::max(max, tmp_max);
-        let tmp_max = get_energized_count(
-            &map,
-            height,
-            width,
-            Position { y, x: width - 1 },
-            Direction::Left,
-        );
-        max = std::cmp::max(max, tmp_max);
+        let tmp_maximum = get_energized_count(&map, height, width, Position { y, x: 0 }, Right);
+        maximum = max(maximum, tmp_maximum);
+        let tmp_maximum =
+            get_energized_count(&map, height, width, Position { y, x: width - 1 }, Left);
+        maximum = max(maximum, tmp_maximum);
     }
     for x in 0..width {
-        let tmp_max =
-            get_energized_count(&map, height, width, Position { y: 0, x }, Direction::Down);
-        max = std::cmp::max(max, tmp_max);
-        let tmp_max = get_energized_count(
-            &map,
-            height,
-            width,
-            Position { y: height - 1, x },
-            Direction::Up,
-        );
-        max = std::cmp::max(max, tmp_max);
+        let tmp_maximum = get_energized_count(&map, height, width, Position { y: 0, x }, Down);
+        maximum = max(maximum, tmp_maximum);
+        let tmp_maximum =
+            get_energized_count(&map, height, width, Position { y: height - 1, x }, Up);
+        maximum = max(maximum, tmp_maximum);
     }
-    max
+    maximum
 }
 
 fn main() {
