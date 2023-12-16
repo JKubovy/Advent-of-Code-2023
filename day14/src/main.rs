@@ -1,19 +1,31 @@
-#[derive(Clone)]
+#[derive(Clone, Copy, Hash)]
 enum Ground {
     Round,
     Cube,
     Empty,
 }
 
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+use Ground::*;
+
 impl From<char> for Ground {
     fn from(value: char) -> Self {
         match value {
-            'O' => Ground::Round,
-            '#' => Ground::Cube,
-            '.' => Ground::Empty,
+            'O' => Round,
+            '#' => Cube,
+            '.' => Empty,
             _ => panic!("Unknown ground type"),
         }
     }
+}
+
+fn get_hash(map: &[Vec<Ground>]) -> u64 {
+    let mut hash = DefaultHasher::new();
+    for line in map {
+        line.hash(&mut hash);
+    }
+    hash.finish()
 }
 
 fn parse_map(input: &str) -> Vec<Vec<Ground>> {
@@ -23,55 +35,74 @@ fn parse_map(input: &str) -> Vec<Vec<Ground>> {
     })
 }
 
-fn calculate_weight_for_part(height: usize, start_index: usize, round_count: usize) -> usize {
-    let begin_number = height - start_index;
-
-    (((begin_number + (begin_number - round_count + 1)) as f32 / 2f32) * round_count as f32)
-        as usize
-}
-
-fn calculate_weight_to_north(map: Vec<Vec<Ground>>) -> usize {
-    let (height, width) = (map.len(), map.get(0).expect("Empty puzzle").len());
-    let mut result = 0;
-    for x in 0..width {
-        let mut start_index = 0;
-        let mut round_count = 0;
-        for y in 0..height {
-            match map[y][x] {
-                Ground::Round => round_count += 1,
-                Ground::Cube => {
-                    let weight = calculate_weight_for_part(height, start_index, round_count);
-                    result += weight;
-                    start_index = y + 1;
-                    round_count = 0;
-                }
-                Ground::Empty => {}
-            }
-            if y == height - 1 && round_count > 0 {
-                result += calculate_weight_for_part(height, start_index, round_count);
-            }
-        }
-    }
-
-    result
+fn calculate_weight(map: &[Vec<Ground>]) -> usize {
+    let height = map.len();
+    map.iter()
+        .enumerate()
+        .map(|(line_number, line)| {
+            (height - line_number) * line.iter().filter(|&&tile| matches!(tile, Round)).count()
+        })
+        .sum()
 }
 
 fn first_part(input: &str) -> usize {
-    let map = parse_map(input);
-    calculate_weight_to_north(map)
+    let mut map = parse_map(input);
+    slide_north(&mut map);
+    calculate_weight(&map)
 }
 
-fn spin_map(map: Vec<Vec<Ground>>) -> Vec<Vec<Ground>> {
+// rotate 90 degrees clockwise: (x, y) -> (y, -x)
+fn rotate_clockwise(map: &mut Vec<Vec<Ground>>) {
     let (height, width) = (map.len(), map.get(0).expect("Empty puzzle").len());
-    let mut rotated_map = map.clone();
+    let mut rotated = vec![vec![Empty; height]; width];
+    for (y, line) in map.iter().enumerate() {
+        for (x, ground) in line.iter().enumerate() {
+            rotated[x][height - 1 - y] = *ground;
+        }
+    }
+    *map = rotated;
+}
 
-    todo!()
+fn spin_map(map: &mut Vec<Vec<Ground>>) {
+    for _ in 0..4 {
+        slide_north(map);
+        rotate_clockwise(map);
+    }
+}
+
+fn slide_north(map: &mut Vec<Vec<Ground>>) {
+    let (height, width) = (map.len(), map.get(0).expect("Empty puzzle").len());
+    for x in 0..width {
+        let mut index = 0;
+        for y in 0..height {
+            match map[y][x] {
+                Cube => index = y + 1,
+                Round => {
+                    map[y][x] = map[index][x];
+                    map[index][x] = Round;
+                    index += 1;
+                }
+                _ => {}
+            }
+        }
+    }
 }
 
 fn second_part(input: &str) -> usize {
-    let map = parse_map(input);
-    let map = spin_map(map);
-    calculate_weight_to_north(map)
+    let mut map = parse_map(input);
+    let mut weights = Vec::new();
+    let mut map_hashes = Vec::new();
+    let mut hash = get_hash(&map);
+    while !map_hashes.contains(&hash) {
+        let weight = calculate_weight(&map);
+        weights.push(weight);
+        map_hashes.push(get_hash(&map));
+        spin_map(&mut map);
+        hash = get_hash(&map)
+    }
+    let start_index = map_hashes.iter().position(|&h| h == hash).unwrap();
+    let cycle_len = map_hashes.len() - start_index;
+    weights[((1_000_000_000 - start_index) % cycle_len) + start_index]
 }
 
 fn main() {
@@ -111,6 +142,6 @@ mod tests {
     fn input_second_part() {
         let data = include_str!("../inputs/input.txt");
         let result = second_part(data);
-        assert_eq!(result, todo!());
+        assert_eq!(result, 93742);
     }
 }
